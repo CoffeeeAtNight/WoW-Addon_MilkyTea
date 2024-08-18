@@ -21,7 +21,6 @@ sayHelloBtn:SetScript("OnClick", function()
   SendChatMessage("\\owo/", "GUILD");
 end)
 
--- Create a Close Button
 local closeButton = CreateFrame("Button", nil, MilkyTeaUI, "GameMenuButtonTemplate")
 closeButton:SetPoint("CENTER", MilkyTeaUI, "BOTTOM", 0, 20)
 closeButton:SetSize(100, 25)
@@ -29,15 +28,15 @@ closeButton:SetText("Close")
 closeButton:SetNormalFontObject("GameFontNormal")
 closeButton:SetHighlightFontObject("GameFontHighlight")
 
--- Close the frame when the button is clicked
 closeButton:SetScript("OnClick", function()
   MilkyTeaUI:Hide()
 end)
 
--- Hide the frame by default
 MilkyTeaUI:Hide()
 
--- Create a frame to hold the image
+
+---------------- IMAGES ----------------
+
 local imageFrame = CreateFrame("Frame", "Logo", UIParent)
 imageFrame:SetSize(160, 150)
 imageFrame:SetPoint("TOPLEFT", UIParent, "LEFT", 0, -95)
@@ -48,7 +47,6 @@ imageTexture:SetAllPoints(imageFrame)
 
 imageTexture:SetAlpha(0.9)
 
--- Create a frame to hold the image
 local blossomFrame = CreateFrame("Frame", "blossom", UIParent)
 blossomFrame:SetSize(320, 180)
 blossomFrame:SetPoint("TOPLEFT", UIParent, "TOPLEFT", 0, 0)
@@ -58,6 +56,31 @@ blossomTexture:SetTexture("Interface\\AddOns\\MilkyTea\\Textures\\blossom.png")
 blossomTexture:SetAllPoints(blossomFrame)
 
 blossomTexture:SetAlpha(0.9)
+
+---------------- TIME ----------------
+
+local timeFrame = CreateFrame("Frame", nil, UIParent)
+timeFrame:SetSize(400, 100)
+timeFrame:SetPoint("TOP", UIParent, "TOP", 0, -10)
+
+local timeText = timeFrame:CreateFontString(nil, "OVERLAY")
+timeText:SetFontObject(GameFontNormal)
+timeText:SetFont("Interface\\AddOns\\MilkyTea\\Fonts\\honeybee.ttf", 45, "THICK, OUTLINE")
+timeText:SetPoint("CENTER", timeFrame, "CENTER")
+timeText:SetTextColor(1, 1, 1, 1)
+
+local function UpdateRealTime()
+  local realTimeString = date("%I:%M %p")
+  timeText:SetText(tostring(realTimeString))
+end
+
+timeFrame:SetScript("OnUpdate", function(self, elapsed)
+  self.timeSinceLastUpdate = (self.timeSinceLastUpdate or 0) + elapsed
+  if self.timeSinceLastUpdate >= 1 then
+    UpdateRealTime()
+    self.timeSinceLastUpdate = 0
+  end
+end)
 
 -- Reactive Boss Kill Message
 local eventFrame = CreateFrame("Frame")
@@ -117,7 +140,6 @@ end)
 -- Register a Slash Command
 SLASH_MILKYTEA1 = "/milkytea"
 SlashCmdList["MILKYTEA"] = function()
-  -- Toggle the visibility of the GUI
   if MilkyTeaUI:IsShown() then
     MilkyTeaUI:Hide()
   else
