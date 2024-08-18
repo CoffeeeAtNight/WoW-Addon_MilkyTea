@@ -1,0 +1,42 @@
+{
+  "Lua.runtime.version": "Lua 5.1",
+  "Lua.runtime.builtin": {
+    "basic": "disable",
+    "debug": "disable",
+    "io": "disable",
+    "math": "disable",
+    "os": "disable",
+    "package": "disable",
+    "string": "disable",
+    "table": "disable",
+    "utf8": "disable"
+  },
+  "Lua.workspace.library": [
+    "~\\.vscode\\extensions\\ketho.wow-api-0.17.4\\Annotations"
+  ],
+  "Lua.diagnostics.globals": [
+    "message",
+    "SlashCmdList",
+    "MilkyTeaUI",
+    "PARTY",
+    "BetterDate",
+    "GetBNPlayerCommunityLink",
+    "GetBNPlayerLink",
+    "GetPlayerCommunityLink",
+    "GetPlayerLink",
+    "GMChatFrame_IsGM",
+    "GMError",
+    "IsSecureCmd",
+    "RemoveExtraSpaces",
+    "RemoveNewlines",
+    "ToggleFrame",
+    "ToggleQuickJoinPanel",
+    "PanelTemplates_TabResize",
+    "BNET_CLIENT_WOW",
+    "LFG_LIST_AND_MORE",
+    "UNKNOWN",
+    "ItemRefTooltip",
+    "NPEV2_CHAT_USER_TAG_GUIDE",
+    "SOCIAL_QUEUE_QUEUED_FOR"
+  ]
+}

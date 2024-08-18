@@ -1,0 +1,7 @@
+## Interface: 110000
+## Title: MilkyTea UI
+## Notes: A cute and personalized UI overhaul.
+## Author: Luna
+## Version: 1.0
+
+main.lua
