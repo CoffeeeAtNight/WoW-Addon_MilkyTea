@@ -3,6 +3,14 @@ local MilkyTeaUI = CreateFrame("Frame", "MilkyTeaFrame", UIParent, "BasicFrameTe
 MilkyTeaUI:SetSize(800, 400)
 MilkyTeaUI:SetPoint("CENTER", UIParent, "CENTER")
 
+local isMovable = false
+
+-- Init SavedVariables
+if not MilkyTeaDB then
+  MilkyTeaDB = {}
+end
+MilkyTeaDB.framePos = MilkyTeaDB.framePos or { "CENTER", "CENTER", 0, 0 }
+
 -- Set Title
 MilkyTeaUI.title = MilkyTeaUI:CreateFontString(nil, "OVERLAY")
 MilkyTeaUI.title:SetFontObject("GameFontHighlight")
@@ -40,6 +48,23 @@ MilkyTeaUI:Hide()
 local imageFrame = CreateFrame("Frame", "Logo", UIParent)
 imageFrame:SetSize(160, 150)
 imageFrame:SetPoint("TOPLEFT", UIParent, "LEFT", 0, -95)
+imageFrame:SetMovable(true)
+imageFrame:EnableMouse(true)
+imageFrame:RegisterForDrag("LeftButton")
+
+local function RestoreUIPositions()
+  if MilkyTeaDB.framePos then
+    local point, relativePoint, xOfs, yOfs = unpack(MilkyTeaDB.framePos)
+    imageFrame:SetPoint(point, UIParent, relativePoint, xOfs, yOfs)
+    print("Position restored to:", xOfs, yOfs)
+  end
+end
+
+local function SavePosition()
+  local point, relativeTo, relativePoint, xOfs, yOfs = imageFrame:GetPoint()
+  MilkyTeaDB.framePos = { point, relativePoint, xOfs, yOfs }
+  print("Position saved:", xOfs, yOfs)
+end
 
 local imageTexture = imageFrame:CreateTexture(nil, "ARTWORK")
 imageTexture:SetTexture("Interface\\AddOns\\MilkyTea\\Textures\\shiba.png")
@@ -56,6 +81,16 @@ blossomTexture:SetTexture("Interface\\AddOns\\MilkyTea\\Textures\\blossom.png")
 blossomTexture:SetAllPoints(blossomFrame)
 
 blossomTexture:SetAlpha(0.9)
+
+-- Scripts to handle dragging
+imageFrame:SetScript("OnDragStart", function(self)
+  self:StartMoving()
+end)
+
+imageFrame:SetScript("OnDragStop", function(self)
+  self:StopMovingOrSizing()
+  SavePosition()
+end)
 
 ---------------- TIME ----------------
 
@@ -137,6 +172,28 @@ toggleBossKillBtn:SetScript("OnClick", function()
   end
 end)
 
+-- Create a button to toggle moving mode
+local toggleMoveBtn = CreateFrame("Button", nil, MilkyTeaUI, "GameMenuButtonTemplate")
+toggleMoveBtn:SetPoint("TOP", MilkyTeaUI, "TOP", 0, -50)
+toggleMoveBtn:SetSize(150, 30)
+toggleMoveBtn:SetText("Toggle Move Mode")
+toggleMoveBtn:SetNormalFontObject("GameFontNormal")
+toggleMoveBtn:SetHighlightFontObject("GameFontHighlight")
+
+-- Function to toggle moving mode
+toggleMoveBtn:SetScript("OnClick", function()
+  isMovable = not isMovable
+  if isMovable then
+    imageFrame:EnableMouse(true)
+    imageFrame:RegisterForDrag("LeftButton")
+    print("Move mode enabled")
+  else
+    imageFrame:EnableMouse(false)
+    imageFrame:RegisterForDrag(nil)
+    print("Move mode disabled")
+  end
+end)
+
 -- Register a Slash Command
 SLASH_MILKYTEA1 = "/milkytea"
 SlashCmdList["MILKYTEA"] = function()
@@ -146,3 +203,7 @@ SlashCmdList["MILKYTEA"] = function()
     MilkyTeaUI:Show()
   end
 end
+
+
+-- Execution
+RestoreUIPositions()

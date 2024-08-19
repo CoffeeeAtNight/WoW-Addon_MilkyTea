@@ -3,5 +3,6 @@
 ## Notes: A cute and personalized UI overhaul.
 ## Author: Luna
 ## Version: 1.0
+## SavedVariables: MilkyTeaDB
 
 main.lua
