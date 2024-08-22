@@ -1,200 +1,181 @@
--- Create a Frame (GUI)
-local MilkyTeaUI = CreateFrame("Frame", "MilkyTeaFrame", UIParent, "BasicFrameTemplateWithInset")
-MilkyTeaUI:SetSize(800, 400)
-MilkyTeaUI:SetPoint("CENTER", UIParent, "CENTER")
+-- Initialize SavedVariables
+if not MilkyTeaDB then MilkyTeaDB = {} end
 
-local isMovable = false
+-- Initialize frame positions
+MilkyTeaDB.framePos1 = MilkyTeaDB.framePos1 or { "CENTER", "CENTER", 0, 0 }
+MilkyTeaDB.framePos2 = MilkyTeaDB.framePos2 or { "CENTER", "CENTER", 0, 0 }
+MilkyTeaDB.framePos3 = MilkyTeaDB.framePos3 or { "CENTER", "CENTER", 0, 0 }
+MilkyTeaDB.framePos4 = MilkyTeaDB.framePos4 or { "CENTER", "CENTER", 0, 0 }
+MilkyTeaDB.timePos = MilkyTeaDB.timePos or { "CENTER", "CENTER", 0, 0 }
 
--- Init SavedVariables
-if not MilkyTeaDB then
-  MilkyTeaDB = {}
+-- Utility Functions
+local function RestoreUIPositions(frame, posKey)
+  if MilkyTeaDB[posKey] then
+    local point, relativePoint, xOfs, yOfs = unpack(MilkyTeaDB[posKey])
+    print("Restoring position for: " .. posKey)
+    frame:SetPoint(point, UIParent, relativePoint, xOfs, yOfs)
+  end
 end
-MilkyTeaDB.framePos = MilkyTeaDB.framePos or { "CENTER", "CENTER", 0, 0 }
 
--- Set Title
+local function SavePosition(frame, posKey)
+  local point, _, relativePoint, xOfs, yOfs = frame:GetPoint()
+  MilkyTeaDB[posKey] = { point, relativePoint, xOfs, yOfs }
+end
+
+local function ToggleMoveMode(frame, enable)
+  if enable then
+    frame:EnableMouse(true)
+    frame:RegisterForDrag("LeftButton")
+  else
+    frame:EnableMouse(false)
+    frame:UnregisterForDrag("LeftButton")
+  end
+end
+
+local function CreateDraggableImage(name, texturePath, width, height, posKey)
+  local imageFrame = CreateFrame("Frame", name, UIParent)
+  imageFrame:SetSize(width, height)
+  imageFrame:SetMovable(true)
+
+  local imageTexture = imageFrame:CreateTexture(nil, "ARTWORK")
+  imageTexture:SetTexture(texturePath)
+  imageTexture:SetAllPoints(imageFrame)
+  imageTexture:SetAlpha(0.9)
+
+  imageFrame:SetScript("OnDragStart", function(self)
+    self:StartMoving()
+  end)
+
+  imageFrame:SetScript("OnDragStop", function(self)
+    self:StopMovingOrSizing()
+    SavePosition(self, posKey)
+  end)
+
+  RestoreUIPositions(imageFrame, posKey)
+  return imageFrame
+end
+
+-- Helper function to check if unit is a boss
+local function IsBossByGUID(guid)
+  local unitType = tonumber(strsub(guid, 5, 5), 16)
+  return unitType == 3
+end
+
+-- Boss Kill Detection Logic
+local eventFrame = CreateFrame("Frame")
+local function ToggleBossKillDetection(enable)
+  if enable then
+    eventFrame:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
+  else
+    eventFrame:UnregisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
+  end
+end
+
+eventFrame:SetScript("OnEvent", function(self, event)
+  local _, subevent, _, _, _, _, _, destGUID, destName = CombatLogGetCurrentEventInfo()
+  if subevent == "UNIT_DIED" and IsBossByGUID(destGUID) then
+    SendChatMessage("Good Job everyone! Boss " .. destName .. " has been defeated! \\owo/", "GUILD")
+  end
+end)
+
+-- Images
+local imageFrame = CreateDraggableImage("Logo", "Interface\\AddOns\\MilkyTea\\Textures\\shiba.png", 160, 150, "framePos1")
+local blossomFrame = CreateDraggableImage("blossom", "Interface\\AddOns\\MilkyTea\\Textures\\blossom.png", 320, 180,
+  "framePos2")
+local moonFrame = CreateDraggableImage("moon", "Interface\\AddOns\\MilkyTea\\Textures\\skull-kid.png", 145, 250,
+  "framePos4")
+local catFrame = CreateDraggableImage("cat", "Interface\\AddOns\\MilkyTea\\Textures\\cat.png", 200, 200, "framePos3")
+-- Main UI Frame
+local MilkyTeaUI = CreateFrame("Frame", "MilkyTeaFrame", UIParent, "BasicFrameTemplateWithInset")
+MilkyTeaUI:SetSize(500, 250)
+MilkyTeaUI:SetPoint("CENTER", UIParent, "CENTER")
+MilkyTeaUI:Hide()
+
+-- Title
 MilkyTeaUI.title = MilkyTeaUI:CreateFontString(nil, "OVERLAY")
 MilkyTeaUI.title:SetFontObject("GameFontHighlight")
 MilkyTeaUI.title:SetPoint("CENTER", MilkyTeaUI.TitleBg, "CENTER", 0, 0)
 MilkyTeaUI.title:SetText("MilkyTea UI Menu")
 
--- Say Hello Button
-local sayHelloBtn = CreateFrame("Button", nil, MilkyTeaUI, "GameMenuButtonTemplate")
-sayHelloBtn:SetPoint("CENTER", MilkyTeaUI, "CENTER", 0, 0)
-sayHelloBtn:SetSize(150, 30)
-sayHelloBtn:SetText("Say '\\owo/'")
-sayHelloBtn:SetNormalFontObject("GameFontNormal")
-sayHelloBtn:SetHighlightFontObject("GameFontHighlight")
+-- Button Creator Function
+local function CreateButton(parent, label, width, height, point)
+  local btn = CreateFrame("Button", nil, parent, "GameMenuButtonTemplate")
+  btn:SetSize(width, height)
+  btn:SetPoint(unpack(point))
+  btn:SetText(label)
+  btn:SetNormalFontObject("GameFontNormal")
+  btn:SetHighlightFontObject("GameFontHighlight")
+  return btn
+end
 
+-- Say Hello Button
+local sayHelloBtn = CreateButton(MilkyTeaUI, "Say '\\owo/'", 150, 30, { "CENTER", 0, 0 })
 sayHelloBtn:SetScript("OnClick", function()
-  SendChatMessage("\\owo/", "GUILD");
+  SendChatMessage("\\owo/", "GUILD")
 end)
 
-local closeButton = CreateFrame("Button", nil, MilkyTeaUI, "GameMenuButtonTemplate")
-closeButton:SetPoint("CENTER", MilkyTeaUI, "BOTTOM", 0, 20)
-closeButton:SetSize(100, 25)
-closeButton:SetText("Close")
-closeButton:SetNormalFontObject("GameFontNormal")
-closeButton:SetHighlightFontObject("GameFontHighlight")
-
+-- Close Button
+local closeButton = CreateButton(MilkyTeaUI, "Close", 100, 25, { "BOTTOM", 0, 20 })
 closeButton:SetScript("OnClick", function()
   MilkyTeaUI:Hide()
 end)
 
-MilkyTeaUI:Hide()
-
-
----------------- IMAGES ----------------
-
-local imageFrame = CreateFrame("Frame", "Logo", UIParent)
-imageFrame:SetSize(160, 150)
-imageFrame:SetPoint("TOPLEFT", UIParent, "LEFT", 0, -95)
-imageFrame:SetMovable(true)
-imageFrame:EnableMouse(true)
-imageFrame:RegisterForDrag("LeftButton")
-
-local function RestoreUIPositions()
-  if MilkyTeaDB.framePos then
-    local point, relativePoint, xOfs, yOfs = unpack(MilkyTeaDB.framePos)
-    imageFrame:SetPoint(point, UIParent, relativePoint, xOfs, yOfs)
-    print("Position restored to:", xOfs, yOfs)
-  end
-end
-
-local function SavePosition()
-  local point, relativeTo, relativePoint, xOfs, yOfs = imageFrame:GetPoint()
-  MilkyTeaDB.framePos = { point, relativePoint, xOfs, yOfs }
-  print("Position saved:", xOfs, yOfs)
-end
-
-local imageTexture = imageFrame:CreateTexture(nil, "ARTWORK")
-imageTexture:SetTexture("Interface\\AddOns\\MilkyTea\\Textures\\shiba.png")
-imageTexture:SetAllPoints(imageFrame)
-
-imageTexture:SetAlpha(0.9)
-
-local blossomFrame = CreateFrame("Frame", "blossom", UIParent)
-blossomFrame:SetSize(320, 180)
-blossomFrame:SetPoint("TOPLEFT", UIParent, "TOPLEFT", 0, 0)
-
-local blossomTexture = blossomFrame:CreateTexture(nil, "ARTWORK")
-blossomTexture:SetTexture("Interface\\AddOns\\MilkyTea\\Textures\\blossom.png")
-blossomTexture:SetAllPoints(blossomFrame)
-
-blossomTexture:SetAlpha(0.9)
-
--- Scripts to handle dragging
-imageFrame:SetScript("OnDragStart", function(self)
-  self:StartMoving()
+-- Toggle Boss Kill Detection
+local isBossKillEnabled = false
+local bossKillBtn = CreateButton(MilkyTeaUI, "Enable Boss Kill Detection", 200, 30, { "TOP", 0, -20 })
+bossKillBtn:SetScript("OnClick", function()
+  isBossKillEnabled = not isBossKillEnabled
+  ToggleBossKillDetection(isBossKillEnabled)
+  bossKillBtn:SetText(isBossKillEnabled and "Disable Boss Kill Detection" or "Enable Boss Kill Detection")
 end)
 
-imageFrame:SetScript("OnDragStop", function(self)
-  self:StopMovingOrSizing()
-  SavePosition()
-end)
-
----------------- TIME ----------------
-
-local timeFrame = CreateFrame("Frame", nil, UIParent)
+-- Time Display
+local timeFrame = CreateFrame("Frame", "clock", UIParent)
 timeFrame:SetSize(400, 100)
-timeFrame:SetPoint("TOP", UIParent, "TOP", 0, -10)
+timeFrame:SetMovable(true)
 
 local timeText = timeFrame:CreateFontString(nil, "OVERLAY")
-timeText:SetFontObject(GameFontNormal)
 timeText:SetFont("Interface\\AddOns\\MilkyTea\\Fonts\\honeybee.ttf", 45, "THICK, OUTLINE")
-timeText:SetPoint("CENTER", timeFrame, "CENTER")
+timeText:SetAllPoints(timeFrame)
 timeText:SetTextColor(1, 1, 1, 1)
 
-local function UpdateRealTime()
-  local realTimeString = date("%I:%M %p")
-  timeText:SetText(tostring(realTimeString))
-end
-
+-- OnUpdate to update the time every second
 timeFrame:SetScript("OnUpdate", function(self, elapsed)
   self.timeSinceLastUpdate = (self.timeSinceLastUpdate or 0) + elapsed
   if self.timeSinceLastUpdate >= 1 then
-    UpdateRealTime()
+    timeText:SetText(date("%I:%M %p"))
     self.timeSinceLastUpdate = 0
   end
 end)
 
--- Reactive Boss Kill Message
-local eventFrame = CreateFrame("Frame")
-
--- Start with boss kill detection disabled
-local isBossKillEnabled = false
-
--- Function to toggle boss kill detection
-local function ToggleBossKillDetection(enable)
-  if enable then
-    eventFrame:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
-    print("Boss kill detection ENABLED.")
-  else
-    eventFrame:UnregisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
-    print("Boss kill detection DISABLED.")
-  end
-end
-
--- Function that handles the boss kill event
-eventFrame:SetScript("OnEvent", function(self, event)
-  local timestamp, subevent, _, sourceGUID, sourceName, _, _, destGUID, destName, _, _, spellID =
-      CombatLogGetCurrentEventInfo()
-
-  if subevent == "UNIT_DIED" then
-    if IsBossByGUID(destGUID) then
-      print("Congratulations! You have defeated " .. destName .. "!")
-      SendChatMessage("Good Job everyone! Boss " .. destName .. " has been defeated! \\owo/", "GUILD")
-    end
-  end
+-- Dragging logic for time
+timeFrame:SetScript("OnDragStart", function(self)
+  self:StartMoving()
 end)
 
--- Helper function to check if the unit is a boss
-function IsBossByGUID(guid)
-  local unitType = tonumber(strsub(guid, 5, 5), 16)
-  return unitType == 3   -- 3 means boss unit type in WoW GUIDs
-end
-
--- Button to toggle the boss kill detection
-local toggleBossKillBtn = CreateFrame("Button", nil, MilkyTeaUI, "GameMenuButtonTemplate")
-toggleBossKillBtn:SetPoint("TOP", sayHelloBtn, "BOTTOM", 0, -20)
-toggleBossKillBtn:SetSize(200, 30)
-toggleBossKillBtn:SetText("Enable Boss Kill Detection")
-toggleBossKillBtn:SetNormalFontObject("GameFontNormal")
-toggleBossKillBtn:SetHighlightFontObject("GameFontHighlight")
-
--- Button click handler to enable/disable boss kill detection
-toggleBossKillBtn:SetScript("OnClick", function()
-  isBossKillEnabled = not isBossKillEnabled
-  ToggleBossKillDetection(isBossKillEnabled)
-  if isBossKillEnabled then
-    toggleBossKillBtn:SetText("Disable Boss Kill Detection")
-  else
-    toggleBossKillBtn:SetText("Enable Boss Kill Detection")
-  end
+timeFrame:SetScript("OnDragStop", function(self)
+  self:StopMovingOrSizing()
+  SavePosition(self, "timePos")
 end)
 
--- Create a button to toggle moving mode
-local toggleMoveBtn = CreateFrame("Button", nil, MilkyTeaUI, "GameMenuButtonTemplate")
-toggleMoveBtn:SetPoint("TOP", MilkyTeaUI, "TOP", 0, -50)
-toggleMoveBtn:SetSize(150, 30)
-toggleMoveBtn:SetText("Toggle Move Mode")
-toggleMoveBtn:SetNormalFontObject("GameFontNormal")
-toggleMoveBtn:SetHighlightFontObject("GameFontHighlight")
+-- Restore position and ensure visibility
+RestoreUIPositions(timeFrame, "timePos")
+timeFrame:Show()
 
--- Function to toggle moving mode
-toggleMoveBtn:SetScript("OnClick", function()
+-- Toggle Move Mode Button
+local isMovable = false
+local moveBtn = CreateButton(MilkyTeaUI, "UI Move Disabled", 150, 30, { "TOP", 0, -50 })
+moveBtn:SetScript("OnClick", function()
   isMovable = not isMovable
-  if isMovable then
-    imageFrame:EnableMouse(true)
-    imageFrame:RegisterForDrag("LeftButton")
-    print("Move mode enabled")
-  else
-    imageFrame:EnableMouse(false)
-    imageFrame:RegisterForDrag(nil)
-    print("Move mode disabled")
-  end
+  ToggleMoveMode(imageFrame, isMovable)
+  ToggleMoveMode(blossomFrame, isMovable)
+  ToggleMoveMode(catFrame, isMovable)
+  ToggleMoveMode(moonFrame, isMovable)
+  ToggleMoveMode(timeFrame, isMovable)
+  moveBtn:SetText(isMovable and "UI Move Enabled" or "UI Move Disabled")
 end)
 
--- Register a Slash Command
+-- Register Slash Command to Open UI
 SLASH_MILKYTEA1 = "/milkytea"
 SlashCmdList["MILKYTEA"] = function()
   if MilkyTeaUI:IsShown() then
@@ -203,7 +184,3 @@ SlashCmdList["MILKYTEA"] = function()
     MilkyTeaUI:Show()
   end
 end
-
-
--- Execution
-RestoreUIPositions()
